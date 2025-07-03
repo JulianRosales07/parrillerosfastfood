@@ -11,7 +11,7 @@ interface MercadoPagoCheckoutProps {
 
 // Inicializar MercadoPago con tu Public Key
 // IMPORTANTE: Reemplaza con tu Public Key real de MercadoPago
-const MERCADOPAGO_PUBLIC_KEY = 'TEST-your-public-key-here'; // Cambia por tu clave real
+const MERCADOPAGO_PUBLIC_KEY = 'TEST-8de3d006-23bb-49b9-b797-759094ffe1c4'; // Cambia por tu clave real
 
 const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
   onBack,
