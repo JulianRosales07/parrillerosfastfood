@@ -43,6 +43,10 @@ const CartPage: React.FC = () => {
     setShowDeliveryForm(true);
   };
 
+  const handlePayWithMercadoPago = () => {
+    navigate('/payment');
+  };
+
   const handleBackFromDelivery = () => {
     setShowDeliveryForm(false);
   };
@@ -64,13 +68,22 @@ const CartPage: React.FC = () => {
         
         <div className="mt-6 flex flex-col gap-4">
           {cart.length > 0 && (
-            <button
-              data-tour="delivery-button"
-              onClick={handleOrderDelivery}
-              className="w-full py-4 bg-[#FF8C00] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-            >
-              🛵 Pedir a Domicilio
-            </button>
+            <>
+              <button
+                onClick={handlePayWithMercadoPago}
+                className="w-full py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center"
+              >
+                💳 Pagar con MercadoPago
+              </button>
+              
+              <button
+                data-tour="delivery-button"
+                onClick={handleOrderDelivery}
+                className="w-full py-4 bg-[#FF8C00] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+              >
+                🛵 Pedir a Domicilio
+              </button>
+            </>
           )}
           
           <button

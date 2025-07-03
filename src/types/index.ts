@@ -37,7 +37,7 @@ export interface Category {
   subcategories?: CategorySubcategory[];
 }
 
-export type PaymentMethod = 'card' | 'cash' | 'qr';
+export type PaymentMethod = 'card' | 'cash' | 'qr' | 'mercadopago' | 'delivery';
 
 export interface Order {
   id: string;
@@ -56,4 +56,42 @@ export interface Location {
   whatsapp: string;
   neighborhood: string;
   deliveryZones: string[];
+}
+
+export interface MercadoPagoPreference {
+  items: Array<{
+    id: string;
+    title: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    currency_id: string;
+  }>;
+  payer: {
+    email: string;
+  };
+  payment_methods: {
+    excluded_payment_types: string[];
+    excluded_payment_methods: string[];
+    installments: number;
+  };
+  back_urls: {
+    success: string;
+    failure: string;
+    pending: string;
+  };
+  auto_return: string;
+  external_reference: string;
+  statement_descriptor: string;
+  metadata: {
+    order_number: number;
+    restaurant: string;
+  };
+}
+
+export interface PaymentData {
+  paymentId: string;
+  status: string;
+  externalReference?: string;
+  merchantOrderId?: string;
 }
