@@ -15,7 +15,7 @@ app.use(express.json());
 
 // Configurar MercadoPago
 // IMPORTANTE: Reemplaza con tu Access Token real de MercadoPago
-const MERCADOPAGO_ACCESS_TOKEN = 'TEST-2045758897241464-010215-0c2b5a5b8c0b4c8e9f7a8b9c0d1e2f3g-123456789'; // Cambia por tu token real
+const MERCADOPAGO_ACCESS_TOKEN = 'TEST-3422455489449986-070314-2587fab4903d1e4badd37a76e6351989-271204335'; // Cambia por tu token real
 
 const client = new MercadoPagoConfig({
   accessToken: MERCADOPAGO_ACCESS_TOKEN,
