@@ -5,9 +5,9 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 const app = express();
 const PORT = 3001;
 
-// Configurar CORS
+// Configurar CORS para permitir múltiples orígenes
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 
@@ -139,6 +139,7 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Servidor backend ejecutándose en http://localhost:${PORT}`);
   console.log(`MercadoPago configurado: ${!!MERCADOPAGO_ACCESS_TOKEN}`);
+  console.log(`CORS configurado para: http://localhost:5173, http://localhost:5174`);
   if (MERCADOPAGO_ACCESS_TOKEN) {
     console.log(`Token prefix: ${MERCADOPAGO_ACCESS_TOKEN.substring(0, 10)}...`);
   }
