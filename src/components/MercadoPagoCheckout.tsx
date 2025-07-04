@@ -71,7 +71,10 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
           };
         });
 
-        // Datos de la preferencia
+        // Get current origin dynamically
+        const currentOrigin = window.location.origin;
+
+        // Datos de la preferencia con URLs corregidas
         const preferenceData = {
           items: items,
           payer: {
@@ -83,9 +86,9 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
             installments: 12
           },
           back_urls: {
-            success: `${window.location.origin}/payment-success`,
-            failure: `${window.location.origin}/payment-failure`,
-            pending: `${window.location.origin}/payment-pending`
+            success: `${currentOrigin}/payment-success`,
+            failure: `${currentOrigin}/payment-failure`,
+            pending: `${currentOrigin}/payment-pending`
           },
           auto_return: 'approved',
           external_reference: `PARRILLEROS-${orderNumber}`,
@@ -98,7 +101,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
 
         console.log('Enviando datos a la API:', preferenceData);
 
-        // Llamar a tu backend para crear la preferencia - FIXED URL
+        // Llamar a tu backend para crear la preferencia
         const response = await fetch('http://localhost:3001/api/create-preference', {
           method: 'POST',
           headers: {
