@@ -74,7 +74,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
         // Get current origin dynamically
         const currentOrigin = window.location.origin;
 
-        // Datos de la preferencia con URLs corregidas
+        // Datos de la preferencia - SIN auto_return para evitar el error
         const preferenceData = {
           items: items,
           payer: {
@@ -90,7 +90,8 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
             failure: `${currentOrigin}/payment-failure`,
             pending: `${currentOrigin}/payment-pending`
           },
-          auto_return: 'approved',
+          // Removemos auto_return para evitar el error
+          // auto_return: 'approved',
           external_reference: `PARRILLEROS-${orderNumber}`,
           statement_descriptor: 'PARRILLEROS FAST FOOD',
           metadata: {

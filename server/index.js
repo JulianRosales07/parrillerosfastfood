@@ -69,7 +69,8 @@ app.post('/api/create-preference', async (req, res) => {
         failure: req.body.back_urls?.failure || `${req.get('origin') || 'http://localhost:5173'}/payment-failure`,
         pending: req.body.back_urls?.pending || `${req.get('origin') || 'http://localhost:5173'}/payment-pending`
       },
-      auto_return: req.body.auto_return || 'approved',
+      // Removemos auto_return para evitar el error de validación
+      // auto_return: req.body.auto_return || 'approved',
       external_reference: req.body.external_reference || `PARRILLEROS-${Date.now()}`,
       statement_descriptor: req.body.statement_descriptor || 'PARRILLEROS FAST FOOD',
       metadata: req.body.metadata || {
