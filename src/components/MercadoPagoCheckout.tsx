@@ -96,8 +96,10 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
           }
         };
 
-        // Llamar a tu backend para crear la preferencia
-        const response = await fetch('/api/create-preference', {
+        console.log('Enviando datos a la API:', preferenceData);
+
+        // Llamar a tu backend para crear la preferencia - FIXED URL
+        const response = await fetch('http://localhost:3001/api/create-preference', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -106,15 +108,18 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
         });
 
         if (!response.ok) {
-          throw new Error('Error al crear la preferencia de pago');
+          const errorData = await response.json();
+          console.error('Error response from server:', errorData);
+          throw new Error(errorData.details || 'Error al crear la preferencia de pago');
         }
 
         const data = await response.json();
+        console.log('Preferencia creada:', data);
         setPreferenceId(data.id);
         
       } catch (err) {
         console.error('Error creando preferencia:', err);
-        setError('Error al preparar el pago. Por favor, intenta nuevamente.');
+        setError(`Error al preparar el pago: ${err.message}`);
       } finally {
         setIsLoading(false);
       }
