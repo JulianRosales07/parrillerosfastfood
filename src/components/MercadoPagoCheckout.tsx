@@ -74,30 +74,38 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
         // Get current origin dynamically
         const currentOrigin = window.location.origin;
 
-        // Datos de la preferencia - SIN auto_return para evitar el error
+        // Datos de la preferencia optimizada para mostrar todos los métodos de pago
         const preferenceData = {
           items: items,
           payer: {
             email: 'cliente@parrilleros.com' // Email por defecto
           },
+          // Configuración optimizada para mostrar TODOS los métodos de pago disponibles
           payment_methods: {
+            // No excluir ningún tipo de pago (permite tarjetas, PSE, Nequi, Efecty, etc.)
             excluded_payment_types: [],
+            // No excluir métodos específicos
             excluded_payment_methods: [],
-            installments: 12
+            // Permitir cuotas para tarjetas de crédito
+            installments: 12,
+            // Configuración adicional para Colombia
+            default_payment_method_id: null,
+            default_installments: 1
           },
           back_urls: {
             success: `${currentOrigin}/payment-success`,
             failure: `${currentOrigin}/payment-failure`,
             pending: `${currentOrigin}/payment-pending`
           },
-          // Removemos auto_return para evitar el error
-          // auto_return: 'approved',
           external_reference: `PARRILLEROS-${orderNumber}`,
           statement_descriptor: 'PARRILLEROS FAST FOOD',
           metadata: {
             order_number: orderNumber,
             restaurant: 'Parrilleros Fast Food'
-          }
+          },
+          // Configuraciones adicionales para optimizar la experiencia
+          expires: false, // No expira
+          purpose: 'wallet_purchase' // Optimizado para compras
         };
 
         console.log('Enviando datos a la API:', preferenceData);
@@ -201,7 +209,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
                 <CreditCard size={28} className="mr-2 text-[#FF8C00]" />
                 Pagar con MercadoPago
               </h1>
-              <p className="text-gray-600">Completa tu pago de forma segura</p>
+              <p className="text-gray-600">Elige tu método de pago preferido</p>
             </div>
           </div>
           
@@ -269,27 +277,27 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
             </div>
           </div>
 
-          {/* Información de seguridad */}
+          {/* Información de métodos de pago */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Pago Seguro</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Métodos de Pago Disponibles</h2>
             <div className="space-y-4">
               <div className="flex items-center p-3 bg-green-50 rounded-lg">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
                   <CheckCircle size={16} className="text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-green-800">Transacción Segura</p>
-                  <p className="text-sm text-green-600">Protegido por MercadoPago</p>
+                  <p className="font-medium text-green-800">💳 Tarjetas de Crédito y Débito</p>
+                  <p className="text-sm text-green-600">Visa, Mastercard, American Express</p>
                 </div>
               </div>
               
               <div className="flex items-center p-3 bg-blue-50 rounded-lg">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <CreditCard size={16} className="text-blue-600" />
+                  <CheckCircle size={16} className="text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-blue-800">Múltiples Métodos</p>
-                  <p className="text-sm text-blue-600">Tarjetas, PSE, Efecty y más</p>
+                  <p className="font-medium text-blue-800">🏦 PSE (Débito Online)</p>
+                  <p className="text-sm text-blue-600">Pago directo desde tu banco</p>
                 </div>
               </div>
 
@@ -298,8 +306,18 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
                   <CheckCircle size={16} className="text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-purple-800">Datos Protegidos</p>
-                  <p className="text-sm text-purple-600">Encriptación SSL 256 bits</p>
+                  <p className="font-medium text-purple-800">📱 Billeteras Digitales</p>
+                  <p className="text-sm text-purple-600">Nequi, Daviplata, y más</p>
+                </div>
+              </div>
+
+              <div className="flex items-center p-3 bg-orange-50 rounded-lg">
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                  <CheckCircle size={16} className="text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-orange-800">💰 Efectivo</p>
+                  <p className="text-sm text-orange-600">Efecty, Baloto, y otros puntos</p>
                 </div>
               </div>
             </div>
@@ -309,7 +327,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
         {/* Widget de MercadoPago */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-6 text-gray-800 text-center">
-            Selecciona tu método de pago
+            Selecciona tu método de pago preferido
           </h2>
           
           {preferenceId ? (
@@ -321,6 +339,10 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
                 customization={{
                   texts: {
                     valueProp: 'smart_option',
+                  },
+                  visual: {
+                    buttonBackground: 'default',
+                    borderRadius: '8px',
                   },
                 }}
                 onSubmit={handlePaymentSuccess}
@@ -336,27 +358,26 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
           )}
         </div>
 
-        {/* Información adicional */}
+        {/* Información de seguridad */}
         <div className="mt-6 bg-gray-100 rounded-lg p-6">
-          <h3 className="font-bold text-gray-800 mb-3">Métodos de pago disponibles:</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-            <div className="flex items-center">
-              <CreditCard size={16} className="mr-2 text-[#FF8C00]" />
-              <span>Tarjetas de crédito</span>
+          <h3 className="font-bold text-gray-800 mb-3 text-center">🔒 Pago 100% Seguro</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div className="flex items-center justify-center">
+              <CheckCircle size={16} className="mr-2 text-green-600" />
+              <span>Encriptación SSL</span>
             </div>
-            <div className="flex items-center">
-              <CreditCard size={16} className="mr-2 text-[#FF8C00]" />
-              <span>Tarjetas de débito</span>
+            <div className="flex items-center justify-center">
+              <CheckCircle size={16} className="mr-2 text-green-600" />
+              <span>Datos protegidos</span>
             </div>
-            <div className="flex items-center">
-              <span className="mr-2">🏦</span>
-              <span>PSE</span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">💰</span>
-              <span>Efecty</span>
+            <div className="flex items-center justify-center">
+              <CheckCircle size={16} className="mr-2 text-green-600" />
+              <span>Procesamiento inmediato</span>
             </div>
           </div>
+          <p className="text-center text-xs text-gray-500 mt-4">
+            Una vez completado el pago, tu pedido será enviado automáticamente por WhatsApp a la sede seleccionada.
+          </p>
         </div>
       </div>
     </div>

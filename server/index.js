@@ -53,10 +53,17 @@ app.post('/api/create-preference', async (req, res) => {
       payer: {
         email: req.body.payer?.email || 'cliente@parrilleros.com'
       },
+      // Configuración de métodos de pago para mostrar TODAS las opciones disponibles
       payment_methods: {
+        // No excluir ningún tipo de pago - esto permite tarjetas, PSE, Nequi, etc.
         excluded_payment_types: [],
+        // No excluir métodos específicos
         excluded_payment_methods: [],
-        installments: 12
+        // Permitir cuotas hasta 12 meses para tarjetas de crédito
+        installments: 12,
+        // Configuración adicional para Colombia
+        default_payment_method_id: null,
+        default_installments: 1
       },
       back_urls: {
         success: req.body.back_urls?.success || `${req.get('origin') || 'http://localhost:5174'}/payment-success`,
@@ -68,7 +75,10 @@ app.post('/api/create-preference', async (req, res) => {
       metadata: req.body.metadata || {
         restaurant: 'Parrilleros Fast Food'
       },
-      notification_url: `${req.get('origin') || 'http://localhost:3001'}/api/webhook/mercadopago`
+      notification_url: `${req.get('origin') || 'http://localhost:3001'}/api/webhook/mercadopago`,
+      // Configuraciones adicionales para mejorar la experiencia de pago
+      expires: false, // No expira la preferencia
+      purpose: 'wallet_purchase' // Optimizado para compras
     };
 
     console.log('Datos de preferencia procesados:', JSON.stringify(preferenceData, null, 2));
