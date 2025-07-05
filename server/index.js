@@ -13,7 +13,7 @@ const MERCADOPAGO_ACCESS_TOKEN = 'APP_USR-3422455489449986-070314-8ae7114f290e73
 
 const client = new MercadoPagoConfig({
   accessToken: MERCADOPAGO_ACCESS_TOKEN,
-  options: { timeout: 5000 }
+  options: { timeout: 15000 } // Aumentado de 5000 a 15000ms para evitar timeouts
 });
 
 const preference = new Preference(client);
