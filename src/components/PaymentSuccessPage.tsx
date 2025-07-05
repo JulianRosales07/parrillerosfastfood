@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Download, Printer, Home, Clock, Truck } from 'lucide-react';
+import { CheckCircle, Download, Printer, Home, Clock, Truck, Loader } from 'lucide-react';
 import { useOrder } from '../context/OrderContext';
 import OrderSummary from './OrderSummary';
 
@@ -9,6 +9,8 @@ const PaymentSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { cart, total, orderNumber, clearCart } = useOrder();
   const [paymentData, setPaymentData] = useState<any>(null);
+  const [whatsappSent, setWhatsappSent] = useState(false);
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
 
   // Obtener datos del pago desde los parámetros de URL
   useEffect(() => {
@@ -18,19 +20,65 @@ const PaymentSuccessPage: React.FC = () => {
     const merchantOrderId = searchParams.get('merchant_order_id');
 
     if (paymentId && status) {
-      setPaymentData({
+      const paymentInfo = {
         paymentId,
         status,
         externalReference,
         merchantOrderId
-      });
+      };
+      
+      setPaymentData(paymentInfo);
 
-      // Si el pago fue aprobado, verificar con el backend
+      // Si el pago fue aprobado, enviar mensaje de WhatsApp automáticamente
       if (status === 'approved') {
-        verifyPayment(paymentId);
+        sendWhatsAppMessage(paymentInfo);
       }
     }
   }, [searchParams]);
+
+  const sendWhatsAppMessage = async (paymentInfo: any) => {
+    try {
+      setSendingWhatsapp(true);
+      
+      // Obtener datos del pedido desde localStorage (si están disponibles)
+      const orderData = {
+        cart,
+        total,
+        orderNumber,
+        formData: JSON.parse(localStorage.getItem('parrilleros-order-data') || '{}')
+      };
+      
+      const selectedLocation = JSON.parse(localStorage.getItem('parrilleros-selected-location') || '{}');
+
+      const response = await fetch('http://localhost:3001/api/send-whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderData,
+          paymentData: paymentInfo,
+          selectedLocation
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Abrir WhatsApp automáticamente
+        window.open(result.whatsappUrl, '_blank');
+        setWhatsappSent(true);
+        
+        console.log('Mensaje de WhatsApp enviado exitosamente');
+      } else {
+        console.error('Error enviando mensaje de WhatsApp');
+      }
+    } catch (error) {
+      console.error('Error enviando mensaje de WhatsApp:', error);
+    } finally {
+      setSendingWhatsapp(false);
+    }
+  };
 
   const verifyPayment = async (paymentId: string) => {
     try {
@@ -89,8 +137,8 @@ ${cartDetails}
 • IVA (8%): $${Math.round(iva).toLocaleString()}
 • TOTAL PAGADO: $${Math.round(total).toLocaleString()}
 
-⏰ Tiempo estimado: 15-20 minutos
-📍 Recoger en mostrador
+⏰ Tiempo estimado: 45-60 minutos
+📍 Entrega a domicilio
 
 ¡GRACIAS POR TU COMPRA!`;
   };
@@ -135,6 +183,10 @@ ${cartDetails}
   };
 
   const handleFinish = () => {
+    // Limpiar datos del localStorage
+    localStorage.removeItem('parrilleros-order-data');
+    localStorage.removeItem('parrilleros-selected-location');
+    
     clearCart();
     navigate('/');
   };
@@ -181,6 +233,30 @@ ${cartDetails}
               <p><strong>Referencia:</strong> {paymentData.externalReference}</p>
             </div>
           </div>
+
+          {/* Estado del WhatsApp */}
+          {isApproved && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-center">
+                {sendingWhatsapp ? (
+                  <>
+                    <Loader className="animate-spin w-5 h-5 text-green-600 mr-2" />
+                    <span className="text-green-800 font-medium">Enviando pedido por WhatsApp...</span>
+                  </>
+                ) : whatsappSent ? (
+                  <>
+                    <CheckCircle size={20} className="text-green-600 mr-2" />
+                    <span className="text-green-800 font-medium">✅ Pedido enviado por WhatsApp</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock size={20} className="text-green-600 mr-2" />
+                    <span className="text-green-800 font-medium">Preparando envío por WhatsApp...</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Información del pedido */}
@@ -208,16 +284,16 @@ ${cartDetails}
                 <Clock size={20} className="text-green-600 mr-2" />
                 <span className="font-bold text-green-800">Tiempo estimado</span>
               </div>
-              <p className="text-2xl font-bold text-green-600">15-20 minutos</p>
+              <p className="text-2xl font-bold text-green-600">45-60 minutos</p>
             </div>
 
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
               <div className="flex items-center mb-2">
                 <Truck size={20} className="text-orange-600 mr-2" />
-                <span className="font-bold text-orange-800">Recoger en mostrador</span>
+                <span className="font-bold text-orange-800">Entrega a domicilio</span>
               </div>
               <p className="text-sm text-orange-700">
-                Presenta este comprobante al recoger tu pedido
+                Tu pedido será procesado y enviado a la dirección indicada
               </p>
             </div>
           </div>
@@ -283,8 +359,10 @@ ${cartDetails}
         {/* Nota importante */}
         <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
-            <strong>📱 Importante:</strong> Guarda este comprobante y preséntalo al recoger tu pedido. 
-            Si tienes algún problema, contacta a nuestro personal con el ID de pago.
+            <strong>📱 Importante:</strong> {whatsappSent 
+              ? 'Tu pedido ha sido enviado automáticamente por WhatsApp a la sede seleccionada. Te contactarán pronto para confirmar la entrega.'
+              : 'Guarda este comprobante. Tu pedido será enviado automáticamente por WhatsApp a la sede seleccionada.'
+            }
           </p>
         </div>
       </div>

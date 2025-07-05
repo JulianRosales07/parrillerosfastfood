@@ -1,16 +1,10 @@
 import express from 'express';
-import cors from 'cors';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 const app = express();
 const PORT = 3001;
 
-// Configurar CORS para permitir múltiples orígenes
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
-  credentials: true
-}));
-
+// Eliminar CORS - permitir todas las solicitudes
 app.use(express.json());
 
 // Configurar MercadoPago
@@ -65,17 +59,16 @@ app.post('/api/create-preference', async (req, res) => {
         installments: 12
       },
       back_urls: {
-        success: req.body.back_urls?.success || `${req.get('origin') || 'http://localhost:5173'}/payment-success`,
-        failure: req.body.back_urls?.failure || `${req.get('origin') || 'http://localhost:5173'}/payment-failure`,
-        pending: req.body.back_urls?.pending || `${req.get('origin') || 'http://localhost:5173'}/payment-pending`
+        success: req.body.back_urls?.success || `${req.get('origin') || 'http://localhost:5174'}/payment-success`,
+        failure: req.body.back_urls?.failure || `${req.get('origin') || 'http://localhost:5174'}/payment-failure`,
+        pending: req.body.back_urls?.pending || `${req.get('origin') || 'http://localhost:5174'}/payment-pending`
       },
-      // Removemos auto_return para evitar el error de validación
-      // auto_return: req.body.auto_return || 'approved',
       external_reference: req.body.external_reference || `PARRILLEROS-${Date.now()}`,
       statement_descriptor: req.body.statement_descriptor || 'PARRILLEROS FAST FOOD',
       metadata: req.body.metadata || {
         restaurant: 'Parrilleros Fast Food'
-      }
+      },
+      notification_url: `${req.get('origin') || 'http://localhost:3001'}/api/webhook/mercadopago`
     };
 
     console.log('Datos de preferencia procesados:', JSON.stringify(preferenceData, null, 2));
@@ -104,6 +97,127 @@ app.post('/api/create-preference', async (req, res) => {
       details: error.message,
       mercadopago_error: error.response?.data || null,
       timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Webhook para recibir notificaciones de MercadoPago
+app.post('/api/webhook/mercadopago', async (req, res) => {
+  try {
+    console.log('Webhook recibido de MercadoPago:', req.body);
+    
+    const { type, data } = req.body;
+    
+    if (type === 'payment') {
+      const paymentId = data.id;
+      console.log('Pago recibido:', paymentId);
+      
+      // Aquí puedes verificar el estado del pago con MercadoPago API si es necesario
+      // y procesar el pedido según corresponda
+      
+      // Responder a MercadoPago que recibimos la notificación
+      res.status(200).send('OK');
+    } else {
+      res.status(200).send('OK');
+    }
+  } catch (error) {
+    console.error('Error procesando webhook:', error);
+    res.status(500).send('Error');
+  }
+});
+
+// Endpoint para enviar mensaje de WhatsApp después del pago
+app.post('/api/send-whatsapp', async (req, res) => {
+  try {
+    const { 
+      orderData, 
+      paymentData, 
+      selectedLocation 
+    } = req.body;
+
+    console.log('Enviando mensaje de WhatsApp:', { orderData, paymentData, selectedLocation });
+
+    // Generar contenido del ticket para WhatsApp
+    const generateWhatsAppMessage = () => {
+      const { cart, total, orderNumber, formData } = orderData;
+      const subtotal = total * 0.92;
+      const iva = total * 0.08;
+
+      const cartDetails = cart.map((item, index) => {
+        const basePrice = item.withFries ? (item.menuItem.priceWithFries || item.menuItem.price) : item.menuItem.price;
+        const customizationsTotal = item.customizations.reduce((sum, option) => sum + option.price, 0);
+        const itemSubtotal = (basePrice + customizationsTotal) * item.quantity;
+        
+        let itemText = `${index + 1}. ${item.menuItem.name}`;
+        if (item.withFries) {
+          itemText += ' + Papas';
+        }
+        itemText += ` x${item.quantity} - $${Math.round(itemSubtotal).toLocaleString()}`;
+        
+        if (item.customizations.length > 0) {
+          itemText += `\n   + ${item.customizations.map(c => c.name.replace('AD ', '')).join(', ')}`;
+        }
+        
+        if (item.specialInstructions) {
+          itemText += `\n   * ${item.specialInstructions}`;
+        }
+        
+        return itemText;
+      }).join('\n\n');
+
+      const invoiceInfo = formData.requiresInvoice ? 
+        `\n📄 FACTURA REQUERIDA\nCC: ${formData.cedula} | Email: ${formData.email}` : 
+        '\n📄 Sin factura';
+
+      const paymentInfo = paymentData?.status === 'approved' 
+        ? `\n💳 PAGO: MercadoPago PAGADO ✅\nID: ${paymentData?.paymentId || 'N/A'}`
+        : `\n💳 PAGO: MercadoPago (${paymentData?.status || 'PENDIENTE'})`;
+
+      return `🍔 NUEVO PEDIDO DOMICILIO - PARRILLEROS
+═══════════════════════════════════════
+
+📋 PEDIDO #${orderNumber.toString().padStart(3, '0')} | ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+👤 CLIENTE
+${formData.name}
+📱 ${formData.phone}${invoiceInfo}
+
+📍 ENTREGA
+${formData.address}, ${formData.neighborhood}
+
+🛒 PRODUCTOS
+${cartDetails}
+
+💰 DESGLOSE DE COSTOS
+• Subtotal: $${Math.round(subtotal).toLocaleString()}
+• IVA (8%): $${Math.round(iva).toLocaleString()}
+• TOTAL: $${Math.round(total).toLocaleString()}
+${paymentInfo}
+
+⏰ Tiempo estimado: 45-60 minutos
+
+${paymentData?.status === 'approved' ? '✅ PEDIDO PAGADO - PROCESAR INMEDIATAMENTE' : '📞 CONFIRMAR PEDIDO Y COORDINAR ENTREGA'}
+
+📍 ${selectedLocation?.name} | ${selectedLocation?.phone}`;
+    };
+
+    const message = generateWhatsAppMessage();
+    
+    // Retornar la URL de WhatsApp para que el frontend la abra
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${selectedLocation?.whatsapp}?text=${encodedMessage}`;
+
+    res.json({
+      success: true,
+      whatsappUrl: whatsappUrl,
+      message: 'Mensaje preparado para WhatsApp'
+    });
+
+  } catch (error) {
+    console.error('Error enviando mensaje de WhatsApp:', error);
+    res.status(500).json({
+      error: 'Error al preparar mensaje de WhatsApp',
+      details: error.message
     });
   }
 });
@@ -140,7 +254,7 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Servidor backend ejecutándose en http://localhost:${PORT}`);
   console.log(`MercadoPago configurado: ${!!MERCADOPAGO_ACCESS_TOKEN}`);
-  console.log(`CORS configurado para: http://localhost:5173, http://localhost:5174`);
+  console.log(`Sin restricciones CORS - Acepta todas las solicitudes`);
   if (MERCADOPAGO_ACCESS_TOKEN) {
     console.log(`Token prefix: ${MERCADOPAGO_ACCESS_TOKEN.substring(0, 10)}...`);
   }

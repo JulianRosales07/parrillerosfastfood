@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CreditCard, Truck, CheckCircle, AlertCircle } from 'lucide-react';
 import MercadoPagoCheckout from './MercadoPagoCheckout';
 import OrderSummary from './OrderSummary';
@@ -22,6 +22,18 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [showMercadoPago, setShowMercadoPago] = useState(false);
+
+  // Guardar datos del pedido en localStorage para uso posterior
+  useEffect(() => {
+    localStorage.setItem('parrilleros-order-data', JSON.stringify({
+      formData: orderData.formData,
+      cart: orderData.cart,
+      total: orderData.total,
+      orderNumber: orderData.orderNumber
+    }));
+    
+    localStorage.setItem('parrilleros-selected-location', JSON.stringify(orderData.selectedLocation));
+  }, [orderData]);
 
   const handleSelectPaymentMethod = (method: string) => {
     setSelectedMethod(method);
@@ -130,7 +142,11 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                       </p>
                       <div className="flex items-center mt-2">
                         <CheckCircle size={16} className="text-green-600 mr-2" />
-                        <span className="text-sm text-green-600 font-medium">Pago inmediato y seguro</span>
+                        <span className="text-sm text-green-600 font-medium">Pago inmediato y automático</span>
+                      </div>
+                      <div className="flex items-center mt-1">
+                        <AlertCircle size={16} className="text-blue-600 mr-2" />
+                        <span className="text-sm text-blue-600 font-medium">Pedido enviado automáticamente por WhatsApp</span>
                       </div>
                     </div>
                   </div>
@@ -165,6 +181,10 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                         <CheckCircle size={16} className="text-green-600 mr-2" />
                         <span className="text-sm text-green-600 font-medium">Paga al recibir tu pedido</span>
                       </div>
+                      <div className="flex items-center mt-1">
+                        <AlertCircle size={16} className="text-blue-600 mr-2" />
+                        <span className="text-sm text-blue-600 font-medium">Pedido enviado automáticamente por WhatsApp</span>
+                      </div>
                     </div>
                   </div>
                   {selectedMethod === 'delivery' && (
@@ -180,11 +200,11 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
             <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center mb-2">
                 <CheckCircle size={20} className="text-blue-600 mr-2" />
-                <span className="font-bold text-blue-800">Transacciones Seguras</span>
+                <span className="font-bold text-blue-800">Proceso Automático</span>
               </div>
               <p className="text-sm text-blue-700">
-                Todos los pagos están protegidos. MercadoPago usa encriptación SSL 
-                y los pagos en domicilio son coordinados directamente con nuestro personal.
+                Una vez completado el pago (o seleccionado pago en domicilio), tu pedido será 
+                enviado automáticamente por WhatsApp a la sede seleccionada para su procesamiento inmediato.
               </p>
             </div>
 
@@ -196,7 +216,7 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                   <li>✅ Pago inmediato</li>
                   <li>✅ Sin contacto físico</li>
                   <li>✅ Comprobante digital</li>
-                  <li>✅ Múltiples métodos</li>
+                  <li>✅ Envío automático por WhatsApp</li>
                 </ul>
               </div>
               
@@ -206,7 +226,7 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                   <li>✅ Paga al recibir</li>
                   <li>✅ Efectivo o transferencia</li>
                   <li>✅ Confirmas antes de pagar</li>
-                  <li>✅ Flexibilidad total</li>
+                  <li>✅ Envío automático por WhatsApp</li>
                 </ul>
               </div>
             </div>
